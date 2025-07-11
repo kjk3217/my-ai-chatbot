@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
+import ChatMessage from '../components/ChatMessage';
+import ChatInput from '../components/ChatInput';
 import { BookOpen, Sparkles, RotateCcw, Send, User, GraduationCap } from 'lucide-react';
 
-export default function JKTeacherChatbot() {
+export default function Home() {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -20,38 +21,58 @@ export default function JKTeacherChatbot() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async (messageText) => {
-    const userMessage = { text: messageText, isUser: true };
+  const handleSendMessage = async (message) => {
+    const userMessage = { text: message, isUser: true };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
-    // 시뮬레이션용 응답
+    // 포커스 유지 - 메시지 전송 후
     setTimeout(() => {
-      const botMessage = { 
-        text: "안녕하세요, 선생님! 중학교 업무와 관련해서 무엇이든 도와드릴게요. 수업 계획, 학생 상담, 행정 업무 등 어떤 부분이 궁금하신가요?", 
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 100);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        const botMessage = { text: data.reply, isUser: false };
+        setMessages(prev => [...prev, botMessage]);
+      } else {
+        throw new Error(data.message || '오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      const errorMessage = { 
+        text: '죄송해요. 잠시 문제가 발생했어요. 다시 시도해주세요.', 
         isUser: false 
       };
-      setMessages(prev => [...prev, botMessage]);
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 2000);
-  };
-
-  const handleSubmit = () => {
-    if (message.trim() && !isLoading) {
-      handleSendMessage(message);
-      setMessage('');
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
+      // 포커스 유지 - AI 응답 완료 후
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 200);
     }
   };
 
   const handleNewChat = () => {
     setMessages([]);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
 
   const ChatMessage = ({ message, isUser }) => (
@@ -156,11 +177,11 @@ export default function JKTeacherChatbot() {
             </div>
           ) : (
             <div className="space-y-4">
-              {messages.map((msg, index) => (
+              {messages.map((message, index) => (
                 <ChatMessage
                   key={index}
-                  message={msg.text}
-                  isUser={msg.isUser}
+                  message={message.text}
+                  isUser={message.isUser}
                 />
               ))}
               
@@ -184,46 +205,12 @@ export default function JKTeacherChatbot() {
           )}
         </div>
         
-        {/* 입력창 */}
         <div className="border-t border-gray-200 bg-white px-4 py-4">
-          <div className="relative">
-            <div className="relative flex items-end border border-gray-200 rounded-xl bg-white focus-within:border-rose-300 focus-within:ring-1 focus-within:ring-rose-200 transition-all duration-200">
-              <textarea
-                ref={inputRef}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="업무 관련 질문을 입력하세요..."
-                className="flex-1 p-3 pr-12 border-0 resize-none focus:outline-none focus:ring-0 rounded-xl max-h-32 min-h-[48px] placeholder-gray-400 text-gray-700 text-sm"
-                disabled={isLoading}
-                rows={1}
-                style={{
-                  height: 'auto',
-                  minHeight: '48px',
-                  maxHeight: '128px',
-                }}
-              />
-              
-              <div className="absolute right-2 bottom-2 flex items-center gap-1">
-                <button
-                  onClick={handleSubmit}
-                  disabled={!message.trim() || isLoading}
-                  className="w-8 h-8 bg-rose-500 hover:bg-rose-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg flex items-center justify-center transition-colors duration-200"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between mt-2 px-1">
-              <div className="text-xs text-gray-500">
-                Shift + Enter로 줄바꿈
-              </div>
-              <div className="text-xs text-gray-400">
-                {message.length}/2000
-              </div>
-            </div>
-          </div>
+          <ChatInput 
+            ref={inputRef}
+            onSend={handleSendMessage} 
+            disabled={isLoading} 
+          />
         </div>
       </main>
     </div>
