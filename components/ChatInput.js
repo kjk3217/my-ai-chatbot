@@ -17,6 +17,7 @@ const ChatInput = forwardRef(({ onSend, disabled }, ref) => {
     if (message.trim() && !disabled) {
       onSend(message);
       setMessage('');
+      // 메시지 전송 후 즉시 포커스 유지
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.focus();
@@ -34,43 +35,43 @@ const ChatInput = forwardRef(({ onSend, disabled }, ref) => {
 
   const handleInputChange = (e) => {
     setMessage(e.target.value);
+    // 자동 높이 조절
     e.target.style.height = 'auto';
     e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px';
   };
 
   return (
     <div className="relative">
-      <div className="relative flex items-end border-2 border-green-200 rounded-2xl bg-white focus-within:border-green-400 focus-within:shadow-lg transition-all duration-200">
+      <div className="relative flex items-end border border-gray-200 rounded-xl bg-white focus-within:border-rose-300 focus-within:ring-1 focus-within:ring-rose-200 transition-all duration-200">
         <textarea
           ref={textareaRef}
           value={message}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          placeholder="궁금한 것을 물어보세요... 🌱"
-          className="flex-1 p-4 pr-14 border-0 resize-none focus:outline-none focus:ring-0 rounded-2xl max-h-32 min-h-[56px] placeholder-gray-400 text-gray-700"
+          placeholder="업무 관련 질문을 입력하세요..."
+          className="flex-1 p-3 pr-12 border-0 resize-none focus:outline-none focus:ring-0 rounded-xl max-h-32 min-h-[48px] placeholder-gray-400 text-gray-700 text-sm"
           disabled={disabled}
           rows={1}
           style={{
             height: 'auto',
-            minHeight: '56px',
+            minHeight: '48px',
             maxHeight: '128px',
           }}
         />
         
-        <div className="absolute right-3 bottom-3 flex items-center gap-1">
+        <div className="absolute right-2 bottom-2 flex items-center gap-1">
           <button
             onClick={handleSubmit}
             disabled={!message.trim() || disabled}
-            className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-xl flex items-center justify-center transition-all duration-200 shadow-lg"
+            className="w-8 h-8 bg-rose-500 hover:bg-rose-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg flex items-center justify-center transition-colors duration-200"
           >
-            <Send className="w-5 h-5" />
+            <Send className="w-4 h-4" />
           </button>
         </div>
       </div>
       
-      <div className="flex items-center justify-between mt-3 px-2 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
-        <div className="text-xs text-gray-500 flex items-center gap-1">
-          <span>✨</span>
+      <div className="flex items-center justify-between mt-2 px-1">
+        <div className="text-xs text-gray-500">
           Shift + Enter로 줄바꿈
         </div>
         <div className="text-xs text-gray-400">
