@@ -24,61 +24,75 @@ export default function Home() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async (message) => {
-    const userMessage = { text: message, isUser: true };
-    setMessages(prev => [...prev, userMessage]);
-    setIsLoading(true);
+const handleSendMessage = async (message) => {
+  const userMessage = { text: message, isUser: true };
+  setMessages(prev => [...prev, userMessage]);
+  setIsLoading(true);
 
-    // 포커스 유지 - 메시지 전송 후
+  // 포커스 유지
+  setTimeout(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, 100);
+
+  try {
+    // 참고자료가 있으면 함께 전송
+    const currentPrompt = referenceText.trim() 
+      ? `[참고자료]\n${referenceText}\n\n[질문]\n${message}\n\n위 참고자료를 바탕으로 답변해주세요.`
+      : message;
+
+    // 🔥 전체 대화 내역을 API로 전송 (핵심 수정 부분)
+    const conversationHistory = messages.map(msg => ({
+      role: msg.isUser ? "user" : "assistant",
+      content: msg.text
+    }));
+
+    // 현재 질문 추가
+    conversationHistory.push({
+      role: "user", 
+      content: currentPrompt
+    });
+
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        message: currentPrompt,
+        conversationHistory: conversationHistory  // 🔥 대화 내역 추가
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (response.ok) {
+      const botMessage = { 
+        text: data.reply, 
+        isUser: false,
+        hasReference: !!referenceText.trim()
+      };
+      setMessages(prev => [...prev, botMessage]);
+    } else {
+      throw new Error(data.message || '오류가 발생했습니다.');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    const errorMessage = { 
+      text: '죄송해요. 잠시 문제가 발생했어요. 다시 시도해주세요.', 
+      isUser: false 
+    };
+    setMessages(prev => [...prev, errorMessage]);
+  } finally {
+    setIsLoading(false);
     setTimeout(() => {
       if (inputRef.current) {
         inputRef.current.focus();
       }
-    }, 100);
-
-    try {
-      // 참고자료가 있으면 함께 전송
-      const prompt = referenceText.trim() 
-        ? `[참고자료]\n${referenceText}\n\n[질문]\n${message}\n\n위 참고자료를 바탕으로 답변해주세요.`
-        : message;
-
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message: prompt }),
-      });
-
-      const data = await response.json();
-      
-      if (response.ok) {
-        const botMessage = { 
-          text: data.reply, 
-          isUser: false,
-          hasReference: !!referenceText.trim() // 참고자료 사용 여부 표시
-        };
-        setMessages(prev => [...prev, botMessage]);
-      } else {
-        throw new Error(data.message || '오류가 발생했습니다.');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      const errorMessage = { 
-        text: '죄송해요. 잠시 문제가 발생했어요. 다시 시도해주세요.', 
-        isUser: false 
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-      // 포커스 유지 - AI 응답 완료 후
-      setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.focus();
-        }
-      }, 200);
-    }
-  };
+    }, 200);
+  }
+};
 
   const handleNewChat = () => {
     setMessages([]);
