@@ -10,14 +10,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message } = req.body;
+    const { message, conversationHistory } = req.body;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `너는 중학교 선생님들을 위한 전문 AI 도우미 'JK'입니다.
+    // 시스템 프롬프트
+    const systemMessage = {
+      role: "system",
+      content: `너는 중학교 선생님들을 위한 전문 AI 도우미 'JK'입니다.
 
 [기본 정체성]
 - 이름: JK (Junior Knowledge)
@@ -69,12 +67,28 @@ export default async function handler(req, res) {
 - 심각한 문제 시 전문기관 연계 권유
 
 항상 선생님의 입장에서 공감하며, 교육 현장에서 바로 활용할 수 있는 실질적인 도움을 제공해주세요.`
-        },
+    };
+
+    // 🔥 전체 대화 내역 구성
+    let messages;
+    
+    if (conversationHistory && conversationHistory.length > 0) {
+      // 대화 내역이 있는 경우: 시스템 프롬프트 + 전체 대화 내역
+      messages = [systemMessage, ...conversationHistory];
+    } else {
+      // 첫 질문인 경우: 시스템 프롬프트 + 현재 질문
+      messages = [
+        systemMessage,
         {
           role: "user",
           content: message
         }
-      ],
+      ];
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: messages,
       max_tokens: 1000,
       temperature: 0.7,
     });
