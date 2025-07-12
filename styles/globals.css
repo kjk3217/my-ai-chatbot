@@ -62,3 +62,41 @@ input:focus, textarea:focus, button:focus {
     font-size: 16px;
   }
 }
+
+/* 사이드패널 스타일 */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 모바일 대응 */
+@media (max-width: 768px) {
+  .w-80 {
+    width: 100vw;
+  }
+  
+  .ml-80 {
+    margin-left: 0;
+  }
+}
+
+/* 부드러운 애니메이션 */
+.transition-all {
+  transition: all 0.3s ease-in-out;
+}
+
+/* 스크롤바 스타일 (사이드패널용) */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 2px;
+}
